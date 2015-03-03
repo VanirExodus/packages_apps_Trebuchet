@@ -225,8 +225,6 @@ public class Launcher extends Activity
     static final String FIRST_LOAD_COMPLETE = "launcher.first_load_complete";
     static final String ACTION_FIRST_LOAD_COMPLETE =
             "com.android.launcher3.action.FIRST_LOAD_COMPLETE";
-    static final String ACTION_MANAGE_APPS=
-            "android.settings.MANAGE_APPLICATIONS_SETTINGS";
 
     private static final String TOOLBAR_ICON_METADATA_NAME = "com.android.launcher.toolbar_icon";
     private static final String TOOLBAR_SEARCH_ICON_METADATA_NAME =
@@ -275,7 +273,6 @@ public class Launcher extends Activity
     private DragLayer mDragLayer;
     private DragController mDragController;
     private View mWeightWatcher;
-    private TransitionEffectsFragment mTransitionEffectsFragment;
     private DynamicGridSizeFragment mDynamicGridSizeFragment;
     private LauncherClings mLauncherClings;
     protected HiddenFolderFragment mHiddenFolderFragment;
@@ -1156,12 +1153,13 @@ public class Launcher extends Activity
         PackageInstallerCompat.getInstance(this).onResume();
 
         //Close out Fragments
-        Fragment f = getFragmentManager().findFragmentByTag(
-                TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
-        if (f != null) {
-            mTransitionEffectsFragment.setEffect();
+        TransitionEffectsFragment tef =
+                (TransitionEffectsFragment)getFragmentManager().findFragmentByTag(
+                        TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
+        if (tef != null) {
+            tef.setEffect();
         }
-        f = getFragmentManager().findFragmentByTag(
+        Fragment f = getFragmentManager().findFragmentByTag(
                 DynamicGridSizeFragment.DYNAMIC_GRID_SIZE_FRAGMENT);
         if (f != null) {
             mDynamicGridSizeFragment.setSize();
@@ -1325,10 +1323,10 @@ public class Launcher extends Activity
         FragmentManager fragmentManager = getFragmentManager();
         FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
 
-        mTransitionEffectsFragment = new TransitionEffectsFragment();
-        mTransitionEffectsFragment.setArguments(bundle);
+        TransitionEffectsFragment tef = new TransitionEffectsFragment();
+        tef.setArguments(bundle);
         fragmentTransaction.setCustomAnimations(0, 0);
-        fragmentTransaction.replace(R.id.launcher, mTransitionEffectsFragment,
+        fragmentTransaction.replace(R.id.launcher, tef,
                 TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
         fragmentTransaction.commit();
     }
@@ -1357,8 +1355,10 @@ public class Launcher extends Activity
             fragmentTransaction
                     .setCustomAnimations(0, R.anim.exit_out_right);
         }
+        Fragment f = getFragmentManager().findFragmentByTag(
+                TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
         fragmentTransaction
-                .remove(mTransitionEffectsFragment).commit();
+                .remove(f).commit();
 
         mDarkPanel.setVisibility(View.VISIBLE);
         ObjectAnimator anim = ObjectAnimator.ofFloat(
@@ -1423,15 +1423,6 @@ public class Launcher extends Activity
         Intent settings;
         settings = new Intent(android.provider.Settings.ACTION_SETTINGS);
         startActivity(settings);
-        if (mWorkspace.isInOverviewMode()) {
-            mWorkspace.exitOverviewMode(false);
-        }
-    }
-
-    protected void startManageApps() {
-        Intent manageApps;
-        manageApps= new Intent(ACTION_MANAGE_APPS);
-        startActivity(manageApps);
         if (mWorkspace.isInOverviewMode()) {
             mWorkspace.exitOverviewMode(false);
         }
@@ -2715,12 +2706,13 @@ public class Launcher extends Activity
                 showOverviewMode(true);
             }
         } else if (mWorkspace.isInOverviewMode()) {
-            Fragment f = getFragmentManager().findFragmentByTag(
-                    TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
+            TransitionEffectsFragment tef =
+                    (TransitionEffectsFragment)getFragmentManager().findFragmentByTag(
+                            TransitionEffectsFragment.TRANSITION_EFFECTS_FRAGMENT);
             Fragment f2 = getFragmentManager().findFragmentByTag(
                     DynamicGridSizeFragment.DYNAMIC_GRID_SIZE_FRAGMENT);
-            if (f != null) {
-                mTransitionEffectsFragment.setEffect();
+            if (tef != null) {
+                tef.setEffect();
             } else if (f2 != null) {
                 mDynamicGridSizeFragment.setSize();
             } else {
@@ -5620,6 +5612,7 @@ public class Launcher extends Activity
         mGrid.layout(Launcher.this);
 
         // Synchronized reload
+        mModel.stopLoader(); //make sure the loader isn't running
         mModel.startLoader(true, page);
         mWorkspace.updateCustomContentVisibility();
 
